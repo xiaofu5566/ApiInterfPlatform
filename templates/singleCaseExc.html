@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>单个接口测试</title>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/common.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/slide.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/flat-ui.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/jquery.nouislider.css' %}">
+    <script type="text/javascript">
+        $(document).ready(function(){
+            //隐藏、显示用例名，预期结果
+            $('#iscase').click(function(){
+                $('.caseshow').toggle();
+            });
+            //执行接口测试
+            $('#testca').click(function(){
+                exectestcase();
+            });
+            function exectestcase(){
+                ip=$('.ip').val();
+                uri=$('.uri').val();
+                headinf=$('.headinf').val();
+                parm=$('.parm').val();
+                method=$('.method').val();
+
+                $.ajax({
+                    type: "post",
+                    url:"{% url 'testc:testcase' %}",
+                    data:{"ip":ip, "uri":uri,"headinf":headinf,"parm":parm,"method":method},
+                    dataType:"json",
+                    success:function(data){
+                        $('.resprst').val(data['rs']);
+                        $('.restatu').val(data['restatu']);
+
+                    },
+                    error:function(){
+                        alert('error');
+                    }
+
+                });
+            }
+
+            //一键复制接口测试数据
+            $('#copyall').click(function(){
+                copyall();
+            });
+            function copyall(){
+                ip=$('.ip').val();
+                uri=$('.uri').val();
+                headinf=$('.headinf').val();
+                parm=$('.parm').val();
+                method=$('.method').val();
+                restat = $('.restatu').val();
+                retext = $('.resprst').val();
+
+                $.ajax({
+                    type: "post",
+                    url:"{% url 'testc:copyall' %}",
+                    data:{"ip":ip, "uri":uri,"headinf":headinf,"parm":parm,"method":method,"restat":restat,"retext":retext},
+                    dataType:"json",
+                    success:function(data){
+                        alert(data['message']);
+                    },
+                    error:function(){
+                        alert('error');
+                    }
+
+                });
+            }
+            //点击预期结果的添加按钮增加预期结果输入框
+            var i=1;
+            document.getElementById("adders").onclick=function(){
+                document.getElementById("ers").innerHTML+='<div id="div_'+i+'" class="col-sm-8"><textarea name="expectrst" class="form-control"></textarea><input class="pull-right" type="button" value="删除" onclick="add_del('+i+')"/></div>';
+                i = i + 1;
+            }
+            //点击预期结果的删除按钮 删除预期结果输入框
+            function add_del(o){
+                document.getElementById("ers").removeChild(document.getElementById("div_"+o));
+            }
+        });
+
+
+
+    </script>
+</head>
+<body>
+<form class="form-horizontal" method="post" action="{% url 'testc:savecase' %}">
+    <input type="hidden" value="{{ intfid }}" name="intf_id">
+    <div class="form-group">
+        <label for="inputEmail3" class="col-xs-1 control-label">IP</label>
+        <div class="col-xs-2">
+            <select class="form-control ip" name="ip">
+                <option>192.168.15.153:8078</option>
+                <option>api5.i-kitchen.cn</option>
+                <option>192.168.15.230:9999</option>
+            </select>
+        </div>
+        <label for="inputEmail3" class="col-xs-1 control-label">path</label>
+        <div class="col-xs-2">
+            <input type="text" class="form-control uri" placeholder="" value="{{ uri }}" name="uri">
+        </div>
+        <label for="inputEmail3" class="col-xs-1 control-label">方法</label>
+        <div class="col-xs-2">
+            <select class="form-control method" name="method">
+                <option>{{ method }}</option>
+
+            </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputPassword3" class="col-xs-1 control-label">头信息</label>
+        <div class="col-sm-8">
+            <textarea class="form-control headinf" rows="3" name="headinf">{{ headinf }}</textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputPassword3" class="col-xs-1 control-label" >请求参数</label>
+        <div class="col-sm-8">
+            <textarea class="form-control parm" rows="3" style="height: 250px" name="parm">{{ parms }}</textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputPassword3" class="col-xs-1 control-label">响应状态码</label>
+        <div class="col-sm-8">
+            <input type="text" class="form-control restatu" placeholder="" name="restatu">
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="inputPassword3" class="col-xs-1 control-label">返回信息</label>
+        <div class="col-sm-8">
+            <textarea class="form-control resprst" rows="3" style="height: 250px" name="resprst"></textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" value="" id="iscase">
+                是否保存为用例
+            </label>
+        </div>
+    </div>
+    <div class="form-group caseshow" style="display: none">
+        <label for="inputEmail3" class="col-xs-1 control-label">用例名</label>
+        <div class="col-xs-2">
+            <input type="text" class="form-control" placeholder="" name="casename">
+        </div>
+    </div>
+    <div class="form-group caseshow" style="display: none">
+        <label for="inputPassword3" class="col-xs-1 control-label">预期结果</label>
+        <div class="col-sm-5" id="ers">
+            <textarea class="form-control" name="expectrst"></textarea><br/>
+        </div>
+        <input type="button" id="adders" value="添加"/>
+    </div>
+    <div class="form-group"  >
+        <div class="col-sm-offset-2 col-sm-5">
+            <a type="submit" class="btn btn-xs btn-green" id="testca">执行</a>
+            <button type="submit" class="btn btn-xs btn-green">保 存</button>
+            <button type="button" class="btn btn-xs btn-info" id="copyall">一键复制</button>
+        </div>
+
+    </div>
+    {% csrf_token %}
+</form>
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block custom_js %}
+    <script type="text/javascript">
+
+        //定制查询接口的url
+        function setUrl(){
+            taskname = $("#taskname").val();
+            if(taskname==""){
+                taskname=null;
+            }
+            se_url = "/taskc/searchRp/"+taskname+"/"
+            $("#searbtn").attr("href",se_url);
+        }
+
+
+    </script>
+{% endblock %}
+
+{% block leftcontent %}
+    <!--测试报告管理模块-->
+    <div class="check-div form-inline">
+
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">任务名：</label>
+            <input name="taskname" style="height: 27px;" class="form-control" id="taskname" placeholder=""/>
+        </div>
+
+        <div>
+            <!-- <button type="submit" class="btn btn-xs btn-green searc" id="tetstd">查询</button>-->
+            <a class="btn btn-success btn-sm" href="#" onclick="setUrl()" id="searbtn">查询</a>
+        </div>
+
+    </div>
+    <div class="data-div">
+        <div class="row tableHeader">
+            <div class="col-xs-2 ">
+                报告名称
+            </div>
+            <div class="col-xs-2">
+                任务名称
+            </div>
+            <div class="col-xs-1">
+                用例总数
+            </div>
+            <div class="col-xs-2">
+                失败数
+            </div>
+            <div class="col-xs-2">
+                创建时间
+            </div>
+
+            <div class="col-xs-2">
+                操作
+            </div>
+        </div>
+        <div class="tablebody">
+            {% for rsr in reportlist.object_list %}
+                <div class="row">
+                    <div class="col-xs-2 ">
+                        {{ rsr.name}}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ rsr.taskid.task_name }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ rsr.nums }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ rsr.failnum }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ rsr.creattime }}
+                    </div>
+
+                    <div class="col-xs-2">
+                        <a class="btn btn-success btn-xs" href="{% url 'testc:detail' rsr.id rsr.flag %}" target="view_window">查看详情</a>
+                        <a class="btn btn-danger btn-xs" href="{% url 'taskc:del_report' rsr.id %}" onclick="return confirm('确认删除吗')">删除</a>
+
+                    </div>
+                </div>
+            {% empty %}
+                <div align="center" > 没有查询结果</div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    <!--页码块-->
+    <footer class="footer">
+        <ul class="pagination">
+            {% if reportlist.has_previous %}
+                <li class="long"><a href="?{{ reportlist.previous_page_number.querystring }}" class="prev">上一页</a></li>
+            {% endif %}
+            {% for page in reportlist.pages %}
+                {% if page %}
+                    {% ifequal page reportlist.number %}
+                        <li class="active"><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% else %}
+                        <li><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% endifequal %}
+                {% else %}
+                    <li class="none"><a href="">...</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if reportlist.has_next %}
+                <li class="long"><a href="?{{ reportlist.next_page_number.querystring }}">下一页</a></li>
+            {% endif %}
+        </ul>
+    </footer>
+
+
+    </div>
+{% endblock %}

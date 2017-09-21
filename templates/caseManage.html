@@ -1,0 +1,479 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block custom_js %}
+    <script type="text/javascript">
+        //点击修改时，将记录id传到修改页面
+        $(document).ready(function(){
+            $(".prjalter").click(function(){
+                index = $(".prjalter").index($(this));
+                prjidval=$(".prjid").eq(index).val();
+                $("#prjid_alt").val(prjidval);
+                showData(prjidval);
+            });
+            //新增用例页面，点击预期结果的添加按钮增加预期结果输入框
+            var i=1;
+            document.getElementById("adders").onclick=function(){
+                document.getElementById("ers").innerHTML+='<div id="div_'+i+'"><textarea name="expectrs" class="form-control duiqi"></textarea><input class="pull-right" type="button" value="删除" onclick="add_del('+i+')"/></div>';
+                i = i + 1;
+            }
+             //修改用例页面，点击预期结果的添加按钮增加预期结果输入框
+            var j=1;
+            document.getElementById("alters").onclick=function(){
+                document.getElementById("altexta").innerHTML+='<div id="div_'+j+'"><textarea name="alexpectrs" class="form-control duiqi"></textarea><input class="pull-right" type="button" value="删除" onclick="alt_del('+j+')"/></div>';
+
+                j = j + 1;
+            }
+        });
+        //新增用例页面，点击预期结果的删除按钮 删除预期结果输入框
+        function add_del(o){
+            document.getElementById("ers").removeChild(document.getElementById("div_"+o));
+        }
+        //修改用例页面，点击预期结果的删除按钮 删除预期结果输入框
+        function alt_del(o){
+            document.getElementById("altexta").removeChild(document.getElementById("div_"+o));
+        }
+        //定制查询接口的url
+        function setUrl(){
+            sprj = $("#sprj").val();
+            smod = $("#smod").val();
+            casepath = $("#casepath").val();
+{#            if(smod==null){#}
+{#                smod="";#}
+{#            }#}
+            if(sprj==""){
+                sprj=null;
+            }
+            if(smod==""){
+                smod=null;
+            }
+            if(casepath==""){
+                casepath=null;
+            }
+            se_url = "/cases/searchCases/"+sprj+"/"+smod+"/"+casepath+"/"
+            $("#searbtn").attr("href",se_url);
+        }
+
+        //初始化修改页面数据
+        function showData(prjidval){
+            $.ajax({
+                type: "GET",
+                url:"{% url 'cases:showInterfcase' %}",
+                data:{'prjidval':prjidval},
+                dataType:"json",
+                success:function(data){
+                    //初始化修改接口用例页面数据
+                    $('#alprj').val(data['interf_start'][0]);
+                    $('#almod').val(data['interf_start'][1]);
+                    $('#alinurl').val(data['interf_start'][2]);
+                    $('#al_method').val(data['interf_start'][3]);
+                    $('#al_headinf').val(data['interf_start'][4]);
+                    $('#al_parms').val(data['interf_start'][5]);
+                    $('#alcasename').val(data['interf_start'][6]);
+                    $('#precondtion').val(data['interf_start'][7]);
+
+                    for(i=0;i<data['expectrs_nums']-1;i++){
+                        document.getElementById("altexta").innerHTML+='<div id="div_'+i+'"><textarea name="alexpectrs" class="form-control duiqi alexpectrs_'+i+'"></textarea><input class="pull-right" type="button" value="删除" onclick="alt_del('+i+')"/></div>';
+                    }
+                    $('.alexpectrs').val(data['expectrs'][0]);//给第一个预期结果文本框（页面本身有的）赋值
+                    for(i=0;i<data['expectrs_nums'];i++){//给其余的预期结果文本框（根据后台数据自动生成的）赋值
+                        $(".alexpectrs_"+i+"").val(data['expectrs'][i+1]);
+                    }
+                },
+                error:function(data){
+                    alert("error");
+                }
+            });
+        }
+
+        //新增用例页面联动查询项目对应的模块
+        function searchmods(prjname){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                    mods = sdata;
+                    var mod = document.getElementById("mod");
+                    // 清空
+                    for ( var i=mod.options.length-1; i>-1; i-- ){
+                        mod[i] = null;
+                    }
+                    // 创建select选项
+                    for(i=1;i<mods['prjmod_name'].length+1;i++){
+                        mod.options[i] = new Option();
+                        mod.options[0].text = "请选择";
+                        mod.options[0].value = "";
+                        mod.options[i].text = mods['prjmod_name'][i-1];
+                        mod.options[i].value = mods['prjmod_name'][i-1];
+                    }
+                },
+            });
+        }
+        //查询接口页面，联动查询项目模块功能
+        function searchmods_searc(prjname){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                    mods = sdata;
+                    var mod = document.getElementById("smod");
+                    // 清空
+                    for ( var i=mod.options.length-1; i>-1; i-- ){
+                        mod[i] = null;
+                    }
+                    // 创建select选项
+                    for(i=1;i<mods['prjmod_name'].length+1;i++){
+                        mod.options[i] = new Option();
+                        mod.options[0].text = "全部"
+                        mod.options[0].value = ""
+                        mod.options[i].text = mods['prjmod_name'][i-1];
+                        mod.options[i].value = mods['prjmod_name'][i-1];
+                    }
+                },
+            });
+        }
+        //新增用例页面联动查询接口uri
+        function searchuri(modname){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'cases:searchuri' %}",
+                data:{'modname':modname},
+                dataType:"json",
+                success: function(sdata){
+                    mods = sdata;
+                    var mod = document.getElementById("adinurl");
+                    // 清空
+                    for ( var i=mod.options.length-1; i>-1; i-- ){
+                        mod[i] = null;
+                    }
+                    // 创建select选项
+                    for(i=1;i<mods['uris'].length+1;i++){
+                        mod.options[i] = new Option();
+                        mod.options[0].text = "请选择";
+                        mod.options[0].value = "";
+                        mod.options[i].text = mods['uris'][i-1];
+                        mod.options[i].value = mods['uris'][i-1];
+                    }
+                },
+            });
+        }
+        //新增用例页面选中uri后自动带出接口方法，头信息，请求参数
+        function searchIntrf(uri){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'cases:searchmhp' %}",
+                data:{'uri':uri},
+                dataType:"json",
+                success: function(sdata){
+                    $('#add_method').val(sdata['method']);
+                    $('#add_headinf').val(sdata['headinf']);
+                    $('#add_parms').val(sdata['parms']);
+                    $('#interid').val(sdata['interid']);
+                },
+            });
+        }
+
+    </script>
+{% endblock %}
+
+{% block leftcontent %}
+    <!--接口用例管理模块-->
+    <div class="check-div form-inline">
+        <div class="col-xs-3">
+            <button class="btn btn-yellow btn-xs" data-toggle="modal" data-target="#addUser">添加用例 </button>
+        </div>
+        <div class="col-xs-2">
+            <label for="sKnot" class="control-label">项目：</label>
+            <select class="form-control sprj" name="sprj" id="sprj" onchange="searchmods_searc(this.value)">
+                <option value="" >全部</option>
+                <option value="wochu" >wochu</option>
+                <option value="erp" >erp</option>
+                <option value="cms" >CMS</option>
+            </select>
+        </div>
+        <div class="col-xs-2">
+            <label for="sKnot" class="control-label">模块：</label>
+            <select class=" form-control " name="smod" id="smod" >
+            </select>
+        </div>
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">path：</label>
+            <input name="casepath" style="height: 27px;" class="form-control" id="casepath" placeholder=""/>
+        </div>
+
+        <div>
+            <!-- <button type="submit" class="btn btn-xs btn-green searc" id="tetstd">查询</button>-->
+            <a class="btn btn-success btn-sm" href="#" onclick="setUrl()" id="searbtn">查询</a>
+        </div>
+
+    </div>
+    <div class="data-div">
+        <div class="row tableHeader">
+            <div class="col-xs-2 ">
+                用例名称
+            </div>
+            <div class="col-xs-2">
+                urlPath
+            </div>
+            <div class="col-xs-1">
+                方法
+            </div>
+            <div class="col-xs-1">
+                前置接口
+            </div>
+            <div class="col-xs-2">
+                修改时间
+            </div>
+            <div class="col-xs-1">
+                操作人
+            </div>
+            <div class="col-xs-2">
+                操作
+            </div>
+        </div>
+        <div class="tablebody">
+            {% for case in intefcaseslist.object_list %}
+                <div class="row">
+                    <div class="col-xs-2 ">
+                        {{ case.casename }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ case.interid.interf_url }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ case.interid.interf_method}}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ case.precondition }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ case.updatetime }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ case.author}}
+                    </div>
+                    <input class="prjid" value="{{ case.id }}" hidden="hidden"/>
+                    <div class="col-xs-2">
+                        <button id="prjalt" class="btn btn-success btn-xs prjalter" data-toggle="modal" data-target="#reviseUser">修改</button>
+                        <a class="btn btn-danger btn-xs" href="{% url 'cases:del_case' case.id %}" onclick="return confirm('确认删除吗')">删除</a>
+
+                    </div>
+                </div>
+            {% empty %}
+                <div align="center" > 没有查询结果</div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    <!--页码块-->
+    <footer class="footer">
+        <ul class="pagination">
+            {% if intefcaseslist.has_previous %}
+                <li class="long"><a href="?{{ intefcaseslist.previous_page_number.querystring }}" class="prev">上一页</a></li>
+            {% endif %}
+            {% for page in intefcaseslist.pages %}
+                {% if page %}
+                    {% ifequal page intefcaseslist.number %}
+                        <li class="active"><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% else %}
+                        <li><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% endifequal %}
+                {% else %}
+                    <li class="none"><a href="">...</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if intefcaseslist.has_next %}
+                <li class="long"><a href="?{{ intefcaseslist.next_page_number.querystring }}">下一页</a></li>
+            {% endif %}
+        </ul>
+    </footer>
+    <!--弹出添加接口用例窗口-->
+    <div class="modal fade" id="addUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">添加用例</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'cases:addcases' %}">
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="prj" id="prj" onchange="searchmods(this.value)">
+                                        <option value="" ></option>
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >erp</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="mod" id="mod" onchange="searchuri(this.value)">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">接口：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="adinurl" id="adinurl" onchange="searchIntrf(this.value)">
+                                    </select>
+                                    <input type="hidden" id="interid" name="interid"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">方法：</label>
+                                <div class="col-xs-8">
+                                    <input name="imethod" type="" class="form-control input-sm duiqi" id="add_method" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">头信息：</label>
+                                <div class="col-xs-8 ">
+                                    <textarea name="headinf" class="form-control duiqi" id="add_headinf"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">参数：</label>
+                                <div class="col-xs-8 ">
+
+                                    <textarea name="parms" class="form-control duiqi" id="add_parms"></textarea>
+                                </div>
+
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">用例名称：</label>
+                                <div class="col-xs-8">
+                                    <input name="casename" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">前置条件：</label>
+                                <div class="col-xs-8">
+                                    <input name="precondition" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">预期结果：</label>
+                                <div class="col-xs-6"  id="ers">
+                                    <textarea name="expectrs" class="form-control duiqi"></textarea>
+                                </div>
+                                <input type="button" id="adders" value="添加"/>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <!-- <div class="modal-footer">
+                     <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                     <button type="button" class="btn btn-xs btn-green">保 存</button>
+                 </div>-->
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <!--弹出修改接口用例窗口-->
+    <div class="modal fade" id="reviseUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">修改用例</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'cases:altercase' %}">
+                            <input id="prjid_alt" value="2" name="alprjid" hidden="hidden"/>
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <input name="alprj" type="" class="form-control input-sm duiqi" id="alprj" disabled="disabled">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                                <div class="col-xs-8 ">
+                                    <input name="almod" type="" class="form-control input-sm duiqi" id="almod" disabled="disabled">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">接口：</label>
+                                <div class="col-xs-8 ">
+                                    <input name="alinurl" type="" class="form-control input-sm duiqi" id="alinurl" disabled="disabled">
+                                    <input type="hidden" id="alinterid" name="alinterid"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">方法：</label>
+                                <div class="col-xs-8">
+                                    <input name="almethod" type="" class="form-control input-sm duiqi" id="al_method" disabled="disabled">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">头信息：</label>
+                                <div class="col-xs-8 ">
+                                    <textarea name="alheadinf" class="form-control duiqi" id="al_headinf"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">参数：</label>
+                                <div class="col-xs-8 ">
+
+                                    <textarea name="alparms" class="form-control duiqi" id="al_parms"></textarea>
+                                </div>
+
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">用例名称：</label>
+                                <div class="col-xs-8">
+                                    <input name="alcasename" type="" class="form-control input-sm duiqi" id="alcasename" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">前置条件：</label>
+                                <div class="col-xs-8">
+                                    <input name="alprecondition" type="" class="form-control input-sm duiqi" id="precondtion" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">预期结果：</label>
+                                <div class="col-xs-6" id="altexta" >
+                                    <textarea name="alexpectrs" class="form-control duiqi alexpectrs" id="alexpectrs"></textarea>
+                                </div>
+                                <input type="button" id="alters" value="添加"/>
+
+                            </div>
+
+                            <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                            <button type="submit" class="btn btn-xs btn-green">保 存</button>
+
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    </div>
+{% endblock %}

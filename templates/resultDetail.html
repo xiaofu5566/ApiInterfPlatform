@@ -1,0 +1,96 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试报告详情</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <script src="{% static 'js/jquery.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap-table-expandable.js' %}"></script>
+    <link href="{% static 'css/bootstrap-table-expandable.css' %}" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/common.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/slide.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/flat-ui.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/jquery.nouislider.css' %}">
+</head>
+<body>
+<div class="container">
+    <h1>{{ casereport.name }}</h1>
+    <table class="table table-hover table-expandable table-sticky-header">
+        <thead>
+        <tr>
+            <th>测试环境</th>
+            <th>用例总数</th>
+            <th>失败数</th>
+            <th>成功数</th>
+            <th>总耗时</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>{{ casereport.taskid.task_ip}}</td>
+            <td>{{ casereport.nums }}</td>
+            <td>{{ casereport.failnum }}</td>
+            <td>{{ succnum }}</td>
+            <td>{{ casereport.durt }}(ms)</td>
+        </tr>
+        </tbody>
+    </table>
+    <table class="table table-hover table-expandable table-sticky-header">
+        <thead>
+        <tr>
+            <th>用例ID</th>
+            <th>用例名称</th>
+            <th>url</th>
+            <th>方法</th>
+
+            <th>是否通过</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for rd in casereslt %}
+            <tr>
+                <td>{{ rd.caseid_id }}</td>
+                <td>{{ rd.caseid.casename }}</td>
+                <td>{{ rd.caseid.interid.interf_url}}</td>
+                <td>{{ rd.caseid.interid.interf_method}}</td>
+
+                <td>{% ifequal rd.istrue 0 %}<strong style="color: green">pass</strong>{% endifequal %}{% ifequal rd.istrue 1 %}<strong style="color: red">fail</strong>{% endifequal %}</td>
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <div>
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active"><a href="#home{{ rd.caseid_id }}" aria-controls="home" role="tab" data-toggle="tab">请求头</a></li>
+                            <li role="presentation"><a href="#profile{{ rd.caseid_id }}" aria-controls="profile" role="tab" data-toggle="tab">请求参数</a></li>
+                            <li role="presentation"><a href="#messages{{ rd.caseid_id }}" aria-controls="messages" role="tab" data-toggle="tab">实际结果</a></li>
+                            <li role="presentation"><a href="#settings{{ rd.caseid_id }}" aria-controls="settings" role="tab" data-toggle="tab">预期结果</a></li>
+                        </ul>
+
+                        <!-- Tab panes -->
+                        <div class="tab-content">
+                            <div role="tabpanel" class="tab-pane active" id="home{{ rd.caseid_id }}">{% if rd.caseid.headinfo == "" %}头信息为空{% else %}{{ rd.caseid.headinfo }}{% endif %}</div>
+                            <div role="tabpanel" class="tab-pane" id="profile{{ rd.caseid_id }}"><textarea rows="6" style="border: none;width: 100%">{{ rd.caseid.param }}</textarea></div>
+                            <div role="tabpanel" class="tab-pane" id="messages{{ rd.caseid_id }}"><textarea rows="6" style="border: none;width: 100%">{{ rd.realresult}}</textarea></div>
+                            <div role="tabpanel" class="tab-pane" id="settings{{ rd.caseid_id }}"><textarea rows="6" style="border: none;width: 100%">{{ rd.caseid.expectRs}}</textarea></div>
+                        </div>
+                        <br/>
+                    </div>
+                </td>
+            </tr>
+        {% empty %}
+            <p>列表为空</p>
+        {% endfor %}
+        </tbody>
+
+    </table>
+
+</div>
+
+</body>
+</html>

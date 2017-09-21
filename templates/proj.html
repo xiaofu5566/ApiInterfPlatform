@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block custom_js %}
+    <script type="text/javascript">
+        //点击修改时，将记录id传到修改页面
+        $(document).ready(function(){
+            $(".prjalter").click(function(){
+                index = $(".prjalter").index($(this));
+                prjidval=$(".prjid").eq(index).val();
+                $("#prjid_alt").val(prjidval);
+                showData(prjidval);
+            });
+
+        });
+        //初始化修改页面数据
+        function showData(prjidval){
+            $.ajax({
+                type: "GET",
+                url:"{% url 'showprj' %}",
+                data:{'prjidval':prjidval},
+                dataType:"json",
+                success:function(data){
+                    //初始化修改接口用例页面数据
+                    $('#alprj').val(data['prjname']);
+                    $('#almod').val(data['mod']);
+
+                },
+                error:function(data){
+                    alert("error");
+                }
+            });
+        }
+    //定制查询接口的url
+        function setUrl(){
+            sprj = $("#sprj").val();
+            smod = $("#smod").val();
+
+{#            if(smod==null){#}
+{#                smod="";#}
+{#            }#}
+            if(sprj==""){
+                sprj=null;
+            }
+            if(smod==""){
+                smod=null;
+            }
+            se_url = "/srcprj/"+sprj+"/"+smod+"/"
+            $("#searbtn").attr("href",se_url);
+        }
+
+
+
+    </script>
+{% endblock %}
+
+{% block leftcontent %}
+    <!--项目管理模块-->
+
+    <div class="check-div form-inline">
+        <div class="col-xs-3">
+            <button class="btn btn-yellow btn-xs" data-toggle="modal" data-target="#addUser">添加项目 </button>
+        </div>
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">项目：</label>
+            <select class="form-control sprj" name="sprj" id="sprj">
+                <option value="" >全部</option>
+                <option value="wochu" >wochu</option>
+                <option value="erp" >erp</option>
+                <option value="cms" >CMS</option>
+            </select>
+        </div>
+        <div class="col-xs-3">
+            <label for="" class="control-label">模块：</label>
+            <input type="text" class="form-control input-sm smod" name="smod" id="smod">
+        </div>
+        <div>
+            <a class="btn btn-success btn-sm" href="#" onclick="setUrl()" id="searbtn">查询</a>
+        </div>
+
+    </div>
+    <div class="data-div">
+        <div class="row tableHeader">
+            <div class="col-xs-2 ">
+                项目
+            </div>
+            <div class="col-xs-2">
+                模块
+            </div>
+            <div class="col-xs-2">
+                修改时间
+            </div>
+            <div class="col-xs-2">
+                操作人
+            </div>
+            <div class="col-xs-2">
+                操作
+            </div>
+        </div>
+        <div class="tablebody">
+            {% for pro in projmods.object_list %}
+                <div class="row">
+                    <div class="col-xs-2 ">
+                        {{ pro.project_name }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ pro.module_name }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ pro.updatetime }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ pro.author }}
+                    </div>
+                    <input class="prjid" value="{{ pro.id }}" hidden="hidden"/>
+                    <div class="col-xs-2">
+                        <button id="prjalt" class="btn btn-success btn-xs prjalter" data-toggle="modal" data-target="#reviseUser">修改</button>
+                        <a class="btn btn-danger btn-xs" href="{% url 'delprj' pro.id %}" onclick="return confirm('确认删除吗')">删除</a>
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    <!--页码块-->
+    <footer class="footer">
+        <ul class="pagination">
+            {% if projmods.has_previous %}
+                <li class="long"><a href="?{{ projmods.previous_page_number.querystring }}" class="prev">上一页</a></li>
+            {% endif %}
+            {% for page in projmods.pages %}
+                {% if page %}
+                    {% ifequal page projmods.number %}
+                        <li class="active"><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% else %}
+                        <li><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% endifequal %}
+                {% else %}
+                    <li class="none"><a href="">...</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if projmods.has_next %}
+                <li class="long"><a href="?{{ projmods.next_page_number.querystring }}">下一页</a></li>
+            {% endif %}
+        </ul>
+    </footer>
+    <!--弹出添加用户窗口-->
+    <div class="modal fade" id="addUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">添加项目</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'addproj' %}">
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="prj">
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >ERP</option>
+                                        <option value="cms" >CMS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                                <div class="col-xs-8 ">
+                                    <input name="mod" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <!--弹出修改用户窗口-->
+    <div class="modal fade" id="reviseUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="gridSystemModalLabel">修改项目</h4>
+        </div>
+        <div class="modal-body">
+            <div class="container-fluid">
+                <form class="form-horizontal" method="post" action="{% url 'alproj' %}">
+                    <input id="prjid_alt" value="2" name="prjid" hidden="hidden" />
+                    <div class="form-group">
+                        <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                        <div class="col-xs-8">
+                            <select class=" form-control select-duiqi" name="alprj" id="alprj">
+                                <option value="wochu" >wochu</option>
+                                <option value="erp" >erp</option>
+                                <option value="cms" >CMS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                        <div class="col-xs-8 ">
+                            <input name="almod" type="" class="form-control input-sm duiqi" id="almod" placeholder="">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+
+                    {% csrf_token %}
+                </form>
+            </div>
+        </div>
+
+
+
+
+    </div>
+{% endblock %}

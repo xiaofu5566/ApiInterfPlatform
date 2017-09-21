@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block custom_js %}
+    <script type="text/javascript">
+        //点击修改时，将记录id传到修改页面
+        $(document).ready(function(){
+            $(".prjalter").click(function(){
+                index = $(".prjalter").index($(this));
+                prjidval=$(".prjid").eq(index).val();
+                $("#prjid_alt").val(prjidval);
+                showData(prjidval);
+            });
+
+        });
+
+        //定制查询接口的url
+        function setUrl(){
+            sprj = $("#sprj").val();
+            smod = $("#smod").val();
+{#            if(smod==null){#}
+{#                smod="";#}
+{#            }#}
+            if(sprj==""){
+                sprj=null;
+            }
+            if(smod==""){
+                smod=null;
+            }
+            se_url = "/searchInf/"+sprj+"/"+smod+"/"
+            $("#searbtn").attr("href",se_url);
+        }
+
+        //初始化修改页面数据
+        function showData(prjidval){
+            $.ajax({
+                type: "GET",
+                url:"{% url 'showInterf' %}",
+                data:{'prjidval':prjidval},
+                dataType:"json",
+                success:function(data){
+                    //初始化修改接口页面数据
+                    $('#al_prj').val(data['interf_start'][0]);
+                    $('#al_url').val(data['interf_start'][2]);
+                    $('#al_headinf').val(data['interf_start'][3]);
+                    $('#al_method').val(data['interf_start'][4]);
+                    $('#al_param').val(data['interf_start'][5]);
+
+                    //初始化模块字段下拉列表数据
+                    var mod = document.getElementById("al_mod");
+                        // 清空
+                        /*for ( var i=mod.options.length-1; i>-1; i-- ){
+                            mod[i] = null;
+                        }*/
+                        // 创建select选项
+                    for(i=0;i<data['interf_start'][6].length;i++){
+                            mod.options[i] = new Option();
+                            mod.options[i].text = data['interf_start'][6][i];
+                            mod.options[i].value = data['interf_start'][6][i];
+                        }
+                    //显示模块字段的选中的初始值
+                    $('#al_mod').val(data['interf_start'][1]);
+
+                },
+                error:function(data){
+                    alert("error");
+                }
+            });
+        }
+
+
+
+        //新增接口页面联动查询项目对应的模块
+        function searchmods(prjname){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                        mods = sdata;
+                        var mod = document.getElementById("mod");
+                        // 清空
+                        for ( var i=mod.options.length-1; i>-1; i-- ){
+                            mod[i] = null;
+                        }
+                        // 创建select选项
+                        for(i=0;i<mods['prjmod_name'].length;i++){
+                            mod.options[i] = new Option();
+                            mod.options[i].text = mods['prjmod_name'][i];
+                            mod.options[i].value = mods['prjmod_name'][i];
+                        }
+                },
+            });
+        }
+    //修改接口页面，联动查询项目模块功能
+    function searchmods_al(prjname){
+        $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                        mods = sdata;
+                        var mod = document.getElementById("al_mod");
+                        // 清空
+                        for ( var i=mod.options.length-1; i>-1; i-- ){
+                            mod[i] = null;
+                        }
+                        // 创建select选项
+                        for(i=0;i<mods['prjmod_name'].length;i++){
+                            mod.options[i] = new Option();
+                            mod.options[i].text = mods['prjmod_name'][i];
+                            mod.options[i].value = mods['prjmod_name'][i];
+                        }
+                },
+            });
+    }
+
+     //查询接口页面，联动查询项目模块功能
+    function searchmods_searc(prjname){
+        $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                        mods = sdata;
+                        var mod = document.getElementById("smod");
+                        // 清空
+                        for ( var i=mod.options.length-1; i>-1; i-- ){
+                            mod[i] = null;
+                        }
+                        // 创建select选项
+                        for(i=1;i<mods['prjmod_name'].length+1;i++){
+                            mod.options[i] = new Option();
+                            mod.options[0].text = "全部"
+                            mod.options[0].value = ""
+                            mod.options[i].text = mods['prjmod_name'][i-1];
+                            mod.options[i].value = mods['prjmod_name'][i-1];
+                        }
+                },
+            });
+    }
+
+    </script>
+{% endblock %}
+
+{% block leftcontent %}
+    <!--接口管理模块-->
+
+    <div class="check-div form-inline">
+        <div class="col-xs-3">
+            <button class="btn btn-yellow btn-xs" data-toggle="modal" data-target="#addUser">添加接口 </button>
+        </div>
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">项目：</label>
+            <select class="form-control sprj" name="sprj" id="sprj" onchange="searchmods_searc(this.value)">
+                <option value="" >全部</option>
+                <option value="wochu" >wochu</option>
+                <option value="erp" >erp</option>
+                <option value="cms" >CMS</option>
+            </select>
+        </div>
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">模块：</label>
+            <select class=" form-control " name="smod" id="smod" >
+            </select>
+        </div>
+        <div>
+           <!-- <button type="submit" class="btn btn-xs btn-green searc" id="tetstd">查询</button>-->
+            <a class="btn btn-success btn-sm" href="#" onclick="setUrl()" id="searbtn">查询</a>
+        </div>
+
+    </div>
+    <div class="data-div">
+        <div class="row tableHeader">
+            <div class="col-xs-1 ">
+                项目
+            </div>
+            <div class="col-xs-1">
+                模块
+            </div>
+            <div class="col-xs-2">
+                url
+            </div>
+            <div class="col-xs-1">
+                头信息
+            </div>
+            <div class="col-xs-1">
+                方法
+            </div>
+            <div class="col-xs-1">
+                参数
+            </div>
+            <div class="col-xs-2">
+                修改时间
+            </div>
+            <div class="col-xs-1">
+                操作人
+            </div>
+            <div class="col-xs-2">
+                操作
+            </div>
+        </div>
+        <div class="tablebody">
+            {% for intf in interfaces.object_list %}
+                <div class="row">
+                    <div class="col-xs-1 ">
+                        {{ intf.projectId.project_name }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ intf.projectId.module_name }}
+                    </div>
+                    <div class="col-xs-2">
+                        <a href="{% url 'testc:singlecase' intf.id %}" target="view_window">{{ intf.interf_url|truncatechars:25}}</a>
+                    </div>
+                    <div class="col-xs-1">
+                        {{ intf.interf_header|truncatechars:15 }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ intf.interf_method }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ intf.interf_param|truncatechars:15 }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ intf.updatetime }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ intf.author}}
+                    </div>
+                    <input class="prjid" value="{{ intf.id }}" hidden="hidden"/>
+                    <div class="col-xs-2">
+                        <button id="prjalt" class="btn btn-success btn-xs prjalter" data-toggle="modal" data-target="#reviseUser">修改</button>
+                        <a class="btn btn-danger btn-xs" href="{% url 'del_intf' intf.id %}" onclick="return confirm('确认删除吗')">删除</a>
+
+                    </div>
+                </div>
+            {% empty %}
+                <div align="center" > 没有查询结果</div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    <!--页码块-->
+    <footer class="footer">
+        <ul class="pagination">
+            {% if interfaces.has_previous %}
+                <li class="long"><a href="?{{ interfaces.previous_page_number.querystring }}" class="prev">上一页</a></li>
+            {% endif %}
+            {% for page in interfaces.pages %}
+                {% if page %}
+                    {% ifequal page interfaces.number %}
+                        <li class="active"><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% else %}
+                        <li><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% endifequal %}
+                {% else %}
+                    <li class="none"><a href="">...</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if interfaces.has_next %}
+                <li class="long"><a href="?{{ interfaces.next_page_number.querystring }}">下一页</a></li>
+            {% endif %}
+        </ul>
+    </footer>
+    <!--弹出添加用户窗口-->
+    <div class="modal fade" id="addUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">添加项目</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'addinterface' %}">
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="addprj" id="addprj" onchange="searchmods(this.value)">
+                                        <option value="" selected="selected"></option>
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >erp</option>
+                                        <option value="cms" >CMS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                                <div class="col-xs-8 ">
+                                    <!--<input name="mod" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">-->
+                                    <select class=" form-control select-duiqi" name="mod" id="mod">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">url：</label>
+                                <div class="col-xs-8 ">
+                                    <input name="url" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">头信息：</label>
+                                <div class="col-xs-8 ">
+                                    <!--<input name="headinf" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">-->
+                                    <textarea name="headinf" class="form-control duiqi"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">方法：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="inmethod">
+                                        <option value="post" >post</option>
+                                        <option value="get" >get</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">参数：</label>
+                                <div class="col-xs-8 ">
+                                    <!--<input name="inparm" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">-->
+                                    <textarea name="inparm" class="form-control duiqi"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <!-- <div class="modal-footer">
+                     <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                     <button type="button" class="btn btn-xs btn-green">保 存</button>
+                 </div>-->
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <!--弹出修改用户窗口-->
+    <div class="modal fade" id="reviseUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">修改项目</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'alterinterface' %}">
+                            <input id="prjid_alt" value="2" name="alprjid" hidden="hidden"/>
+                            <div class="form-group">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="alprj" id="al_prj" onchange="searchmods_al(this.value)">
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >erp</option>
+                                        <option value="cms" >CMS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">模块：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="almod" id="al_mod">
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">url：</label>
+                                <div class="col-xs-8 ">
+
+                                    <textarea name="alurl" id="al_url" class="form-control input-sm duiqi"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">头信息：</label>
+                                <div class="col-xs-8 ">
+
+                                    <textarea name="alheadinf" id="al_headinf" class="form-control input-sm duiqi" ></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">方法：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="alinmethod" id="al_method">
+                                        <option value="post" >post</option>
+                                        <option value="get" >get</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">参数：</label>
+                                <div class="col-xs-8 ">
+
+                                    <textarea name="alinparm"  class="form-control input-sm duiqi" id="al_param" ></textarea>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                            <button type="submit" class="btn btn-xs btn-green">保 存</button>
+
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <!--<div class="modal-footer">
+                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                    <button type="button" class="btn btn-xs btn-green">保 存</button>
+                </div>-->
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+
+
+    </div>
+{% endblock %}

@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block custom_js %}
+    <script type="text/javascript">
+        //点击修改时，将记录id传到修改页面
+        $(document).ready(function(){
+            $(".prjalter").click(function(){
+                index = $(".prjalter").index($(this));
+                prjidval=$(".taskid").eq(index).val();
+                $("#prjid_alt").val(prjidval);
+                showData(prjidval);
+            });
+        });
+        //定制查询接口的url
+        function setUrl(){
+            taskname = $("#taskname").val();
+             if(taskname==""){
+                taskname=null;
+            }
+            se_url = "/taskc/searchTask/"+taskname+"/"
+            $("#searbtn").attr("href",se_url);
+        }
+        //立即执行修改任务
+        function exeTask(taskid,taskip){
+            $.ajax({
+                type: "GET",
+                url:"{% url 'testc:manycasetest' %}",
+                data:{'taskid':taskid,'taskip':taskip},
+                dataType:"json",
+                success:function(data){
+                    alert(data['message']);
+                },
+                error:function(){
+                    alter("执行出错");
+                }
+            });
+        }
+
+        //初始化修改任务页面数据
+        function showData(prjidval){
+            $.ajax({
+                type: "GET",
+                url:"{% url 'taskc:inittask' %}",
+                data:{'prjidval':prjidval},
+                dataType:"json",
+                success:function(data){
+                    //初始化修改测试任务页面数据
+                    $('#altaskname').val(data['taskname']);
+                    $('#alplan').val(data['execplan']);
+                    $('#altaskip').val(data['taskip']);
+                    if(data['execplan']=="项目名"){
+                        //如果返回的用例选取方案是项目名，显示项目名字段，隐藏用例id字段
+                        $('#alprjdiv').show();
+                        $('#alprj').val(data['prjname']);
+                        $('#alcaseiddiv').hide();
+                    }else if(data['execplan']=="用例id"){
+                        //如果返回的用例选取方案是用例id，隐藏项目名字段，显示用例id字段
+                        $('#alcaseiddiv').show();
+                        $('#alcaseid').val(data['caseid']);
+                        $('#alprjdiv').hide();
+                    }
+                },
+                error:function(data){
+                    alert("error");
+                }
+            });
+        }
+
+        //查询接口页面，联动查询项目模块功能
+        function searchmods_searc(prjname){
+            $.ajax({
+                type:"GET",
+                url:"{% url 'searchmods' %}",
+                data:{'prjname':prjname},
+                dataType:"json",
+                success: function(sdata){
+                    mods = sdata;
+                    var mod = document.getElementById("smod");
+                    // 清空
+                    for ( var i=mod.options.length-1; i>-1; i-- ){
+                        mod[i] = null;
+                    }
+                    // 创建select选项
+                    for(i=1;i<mods['prjmod_name'].length+1;i++){
+                        mod.options[i] = new Option();
+                        mod.options[0].text = "全部"
+                        mod.options[0].value = ""
+                        mod.options[i].text = mods['prjmod_name'][i-1];
+                        mod.options[i].value = mods['prjmod_name'][i-1];
+                    }
+                },
+            });
+        }
+        //新增任务页面，显示选取用例方案
+        function showplan(modname){
+            if(modname=="项目名"){
+                $('#prjdiv').show();
+                $('#caseiddiv').hide();
+            }else if(modname=="用例id"){
+                $('#caseiddiv').show();
+                $('#prjdiv').hide();
+            }
+        }
+
+        //修改任务页面，显示选取用例方案
+        function al_showplan(modname){
+            if(modname=="项目名"){
+                $('#alprjdiv').show();
+                $('#alcaseiddiv').hide();
+            }else if(modname=="用例id"){
+                $('#alcaseiddiv').show();
+                $('#alprjdiv').hide();
+            }
+        }
+
+    </script>
+{% endblock %}
+
+{% block leftcontent %}
+    <!--接口用例管理模块-->
+    <div class="check-div form-inline">
+        <div class="col-xs-3">
+            <button class="btn btn-yellow btn-xs" data-toggle="modal" data-target="#addUser">添加任务 </button>
+        </div>
+        <div class="col-xs-3">
+            <button class="btn btn-yellow btn-xs" data-toggle="modal" data-target="#initdata">初始化 </button>
+        </div>
+        <div class="col-xs-3">
+            <label for="sKnot" class="control-label">任务名：</label>
+            <input name="taskname" style="height: 27px;" class="form-control" id="taskname" placeholder=""/>
+        </div>
+
+        <div>
+            <!-- <button type="submit" class="btn btn-xs btn-green searc" id="tetstd">查询</button>-->
+            <a class="btn btn-success btn-sm" href="#" onclick="setUrl()" id="searbtn">查询</a>
+        </div>
+
+    </div>
+    <div class="data-div">
+        <div class="row tableHeader">
+            <div class="col-xs-2 ">
+                任务名
+            </div>
+            <div class="col-xs-2">
+                IP环境
+            </div>
+            <div class="col-xs-1">
+                选取用例方案
+            </div>
+            <div class="col-xs-2">
+                用例集
+            </div>
+            <div class="col-xs-2">
+                修改时间
+            </div>
+            <div class="col-xs-1">
+                操作人
+            </div>
+            <div class="col-xs-2">
+                操作
+            </div>
+        </div>
+        <div class="tablebody">
+            {% for task in casetasklist.object_list %}
+                <div class="row">
+                    <div class="col-xs-2 ">
+                        {{ task.task_name }}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ task.task_ip }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ task.exec_plan }}
+                    </div>
+                    <div class="col-xs-2">
+                        {% ifequal task.exec_plan "项目名"%}{{ task.prj_name }}{% endifequal %}
+                        {% ifequal task.exec_plan "用例id"%}{{ task.case_id }}{% endifequal %}
+                    </div>
+                    <div class="col-xs-2">
+                        {{ task.updatetime }}
+                    </div>
+                    <div class="col-xs-1">
+                        {{ task.author}}
+                    </div>
+                    <input class="taskid" value="{{ task.id }}" hidden="hidden"/>
+                    <div class="col-xs-2">
+                        <button id="prjalt" class="btn btn-success btn-xs prjalter" data-toggle="modal" data-target="#reviseUser">修改</button>
+                        <a class="btn btn-danger btn-xs" href="{% url 'taskc:del_task' task.id %}" onclick="return confirm('确认删除吗')">删除</a>
+                        <a class="btn btn-info btn-xs" href="#" onclick="exeTask({{ task.id }},'{{ task.task_ip}}')">执行</a>
+                    </div>
+                </div>
+            {% empty %}
+                <div align="center" > 没有查询结果</div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+    <!--页码块-->
+    <footer class="footer">
+        <ul class="pagination">
+            {% if intefcaseslist.has_previous %}
+                <li class="long"><a href="?{{ intefcaseslist.previous_page_number.querystring }}" class="prev">上一页</a></li>
+            {% endif %}
+            {% for page in intefcaseslist.pages %}
+                {% if page %}
+                    {% ifequal page intefcaseslist.number %}
+                        <li class="active"><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% else %}
+                        <li><a href="?{{ page.querystring }}" class="page">{{ page }}</a></li>
+                    {% endifequal %}
+                {% else %}
+                    <li class="none"><a href="">...</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if intefcaseslist.has_next %}
+                <li class="long"><a href="?{{ intefcaseslist.next_page_number.querystring }}">下一页</a></li>
+            {% endif %}
+        </ul>
+    </footer>
+    <!--弹出添加任务窗口-->
+    <div class="modal fade" id="addUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">添加任务</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'taskc:addtask' %}">
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">任务名：</label>
+                                <div class="col-xs-8">
+                                    <input name="taskname" type="" class="form-control input-sm duiqi" id="sLink" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">环境ip：</label>
+                                <div class="col-xs-8">
+                                    <select class="form-control select-duiqi" name="taskip">
+                                        <option>192.168.15.153:8078</option>
+                                        <option>api5.i-kitchen.cn</option>
+                                        <option>192.168.15.230:9999</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">选取用例方案：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="plan" id="mod" onchange="showplan(this.value)">
+                                        <option value=""></option>
+                                        <option value="项目名" >项目名</option>
+                                        <option value="用例id" >用例id</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: none;" id="prjdiv">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="prj" id="add_prj">
+                                        <option value="" ></option>
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >erp</option>
+                                        <option value="cms" >CMS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: none;" id="caseiddiv">
+                                <label for="sLink" class="col-xs-3 control-label">用例id：</label>
+                                <div class="col-xs-8 ">
+                                    <textarea name="caseid" class="form-control duiqi" id="add_caseid"></textarea>
+                                </div>
+
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <!-- <div class="modal-footer">
+                     <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                     <button type="button" class="btn btn-xs btn-green">保 存</button>
+                 </div>-->
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
+    <!--弹出修改接口用例窗口-->
+    <div class="modal fade" id="reviseUser" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">修改任务</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'taskc:altask' %}">
+                            <input id="prjid_alt" value="2" name="alprjid" hidden="hidden"/>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">任务名：</label>
+                                <div class="col-xs-8">
+                                    <input name="altaskname" type="" class="form-control input-sm duiqi" id="altaskname" placeholder="">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">环境ip：</label>
+                                <div class="col-xs-8">
+                                    <select class="form-control select-duiqi" name="altaskip" id="altaskip">
+                                        <option>192.168.15.153:8078</option>
+                                        <option>api5.i-kitchen.cn</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">选取用例方案：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="alplan" id="alplan" onchange="al_showplan(this.value)">
+                                        <option value="项目名" >项目名</option>
+                                        <option value="用例id" >用例id</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: none;" id="alprjdiv">
+                                <label for="sKnot" class="col-xs-3 control-label">项目：</label>
+                                <div class="col-xs-8">
+                                    <select class=" form-control select-duiqi" name="alprj" id="alprj">
+                                        <option value="" ></option>
+                                        <option value="wochu" >wochu</option>
+                                        <option value="erp" >erp</option>
+                                        <option value="cms" >CMS</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: none;" id="alcaseiddiv">
+                                <label for="sLink" class="col-xs-3 control-label">用例id：</label>
+                                <div class="col-xs-8 ">
+                                    <textarea name="alcaseid" class="form-control duiqi" id="alcaseid"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">保 存</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+ <!--弹出初始化数据窗口-->
+    <div class="modal fade" id="initdata" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">初始化数据</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <form class="form-horizontal" method="post" action="{% url 'taskc:initdata' %}">
+
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">类型：</label>
+                                <div class="col-xs-8">
+                                    <select class="form-control select-duiqi" name="datatype">
+                                        <option value="积分">积分</option>
+                                        <option value="库存">库存</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">环境：</label>
+                                <div class="col-xs-8 ">
+                                    <select class=" form-control select-duiqi" name="envirmt" id="envirmt">
+
+                                        <option value="测试环境" >测试环境</option>
+                                        <option value="预生产环境" >预生产环境</option>
+                                    </select>
+                                </div>
+                            </div>
+                             <div class="form-group">
+                                <label for="sLink" class="col-xs-3 control-label">数值：</label>
+                                <div class="col-xs-8">
+                                    <input name="scoreorstock" class="form-control input-sm duiqi" id="sLink" placeholder="请输入积分数/库存数">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="col-xs-8">
+                                    <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                                    <button type="submit" class="btn btn-xs btn-green">执行</button>
+                                </div>
+                            </div>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <!-- <div class="modal-footer">
+                     <button type="button" class="btn btn-xs btn-white" data-dismiss="modal">取 消</button>
+                     <button type="button" class="btn btn-xs btn-green">保 存</button>
+                 </div>-->
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+
+    </div>
+{% endblock %}
